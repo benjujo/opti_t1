@@ -93,5 +93,5 @@ def experimento(t):
     
 
 if __name__ == '__main__':
-    #main()
-    experimento(5)
+    main()
+    #experimento(5)
