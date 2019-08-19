@@ -29,6 +29,7 @@ def P2(M, J, p):
     # Definimos la función objetivo
     model.setObjective(A, GRB.MINIMIZE)
 
+    model.Params.TIME_LIMIT = 300
     model.update()
     model.optimize()
 
@@ -66,6 +67,7 @@ def P3(M, J, p, a):
 
     model.setObjective(A, GRB.MINIMIZE)
 
+    model.Params.TIME_LIMIT = 300
     model.update()
     model.optimize()
 
@@ -114,6 +116,7 @@ def P4(M, J, p, a, b):
 
     model.setObjective(A, GRB.MINIMIZE)
 
+    model.Params.TIME_LIMIT = 300
     model.update()
     model.optimize()
 
@@ -130,40 +133,70 @@ def P4(M, J, p, a, b):
 def P5(M, J, p, a, b, c):
     people_qty = len(M)
     tasks_qty = len(J)
+
+    C = np.array(np.zeros(shape=(4, people_qty)))
+    for i in range(people_qty):
+        C[c[i]-1][i] = 1
+
     
     # Definimos segundo modelo similar al anterior
     model = Model("P5")
 
     x = np.array(np.zeros(shape=(people_qty,tasks_qty)), dtype=Var)
     t = np.array(np.zeros(shape=(people_qty,tasks_qty)), dtype=Var)
+    y = np.array(np.zeros(shape=(4,tasks_qty)), dtype=Var)
 
     for i in range(people_qty):
         for j in range(tasks_qty):
             x[i][j] = model.addVar(vtype="B", name="x{},{}".format(i,j))
-            t[i][j] = model.addVar(vtype="C", lb=0, ub=1, name="x{},{}".format(i,j))
+            t[i][j] = model.addVar(vtype="C", lb=0, ub=1, name="t{},{}".format(i,j))
+    for k in range(4):
+        for j in range(tasks_qty):
+            y[k][j] = model.addVar(vtype="B", name="y{},{}".format(k,j))
 
     A = model.addVar(vtype="C", lb=0, name="A")
 
+    # Restricciones
+    '''
     for j in range(tasks_qty):
-        model.addConstr(quicksum(t[:,j]) == 1, name="unaPersonaPorTarea{}".format(j))
+        for k in range(4):
+            #print(quicksum(C[k,:]*t[:,j]))
+            model.addConstr(quicksum(C[k,:]*t[:,j]) == 1, name="unGrupoPorTarea{},{}".format(j,k))
+    '''
+    # Una tarea es realizada solo por un grupo
+    for j in range(tasks_qty):
+        model.addConstr(quicksum(y[:,j]) == 1)
 
+    # Si la tarea es realizada por un grupo, entonces la realizan todos sus integrantes
+    for k in range(4):
+        for j in range(tasks_qty):
+            model.addConstr(quicksum((C[k,:]*x[:,j])) == 5*y[k][j])
+    # La tarea debe ser realizada
+    for j in range(tasks_qty):
+        model.addConstr(quicksum(t[:,j]) == 1)
+    
     # Todos trabajan menos que el máximo, considerando ahora a las personas listas
     for i in range(people_qty):
         if a[i]:
-            model.addConstr(quicksum((np.array(p)/3*x[i,:])) <= A, name="cotaDelMaximo{}".format(i))
+            model.addConstr(quicksum((np.array(p)/3*t[i,:])) <= A, name="cotaDelMaximo{}".format(i))
         else:
-            model.addConstr(quicksum((np.array(p)*x[i,:])) <= A, name="cotaDelMaximo{}".format(i))
+            model.addConstr(quicksum((np.array(p)*t[i,:])) <= A, name="cotaDelMaximo{}".format(i))
+    # Restricción de relación
+    for i in range(people_qty):
+        for j in range(tasks_qty):
+            model.addConstr(x[i][j] >= t[i][j], name="restrRelac{},{}".format(i,j))
 
     model.setObjective(A, GRB.MINIMIZE)
 
+    model.Params.TIME_LIMIT = 300
     model.update()
     model.optimize()
 
-    print("Horas de trabajo máximo P3: {}".format(A.X))
+    print("Horas de trabajo máximo P5: {}".format(A.X))
     for i in range(people_qty):
         if a[i]:
-            print("{} trabajará un total de {} horas".format(M[i], np.sum(np.array(p)/3*np.array([v.X for v in x[i,:]]))))
+            print("{} trabajará un total de {} horas".format(M[i], np.sum(np.array(p)/3*np.array([v.X for v in t[i,:]]))))
         else:
-            print("{} trabajará un total de {} horas".format(M[i], np.sum(np.array(p)*np.array([v.X for v in x[i,:]]))))
+            print("{} trabajará un total de {} horas".format(M[i], np.sum(np.array(p)*np.array([v.X for v in t[i,:]]))))
 
     return model
