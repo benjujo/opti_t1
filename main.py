@@ -1,6 +1,16 @@
 from models import P2, P3, P4, P5
 from faker import Faker
 from random import randint, sample, shuffle
+import numpy as np
+import matplotlib.pyplot as plt
+
+def mean(*a):
+    mean = np.mean(np.array(a), axis=0)
+    return mean
+
+def std(*a):
+    std = np.std(np.array(a), axis=0)
+    return std
 
 def main():
     M = [] # Arreglo de personas
@@ -38,5 +48,50 @@ def main():
     m3 = P4(M, J, p, a, b)
     m4 = P5(M, J, p, a, b, c)
 
+    opti = [0]*4
+    time = [0]*4
+
+    opti[0] = m1.ObjVal
+    opti[1] = m2.ObjVal
+    opti[2] = m3.ObjVal
+    opti[3] = m4.ObjVal
+    time[0] = m1.Runtime
+    time[1] = m2.Runtime
+    time[2] = m3.Runtime
+    time[3] = m4.Runtime
+
+    return opti,time
+
+def experimento(t):
+    optis = []
+    times = []
+    for v in range(t):
+        o,t = main()
+        optis.append(o)
+        times.append(t)
+    print(optis)
+    print(times)
+
+    
+    plt.figure(1)
+
+    plt.subplot(121)
+    plt.errorbar([1,2,3,4],mean(*optis),yerr=std(*optis))
+    plt.xlabel('Modelo a optimizar')
+    plt.xticks([1,2,3,4],['P2','P3','P4','P5'])
+    plt.ylabel('Valor óptimo [hr]')
+    plt.title('Valor óptimo por modelo')
+    
+    plt.subplot(122)
+    plt.errorbar([1,2,3,4],mean(*times),yerr=std(*times))
+    plt.xlabel('Modelo a optimizar')
+    plt.xticks([1,2,3,4],['P2','P3','P4','P5'])
+    plt.ylabel('Tiempo de ejecución [s]')
+    plt.title('Tiempo de ejecución por modelo')
+    
+    plt.show()
+    
+
 if __name__ == '__main__':
-    main()
+    #main()
+    experimento(5)
