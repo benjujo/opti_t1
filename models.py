@@ -130,7 +130,7 @@ def P4(M, J, p, a, b):
     return model
 
 
-def P5(M, J, p, a, b, c):
+def P5(M, J, p, a, c):
     people_qty = len(M)
     tasks_qty = len(J)
 

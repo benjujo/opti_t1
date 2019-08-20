@@ -46,7 +46,7 @@ def main():
     m1 = P2(M, J, p)
     m2 = P3(M, J, p, a)
     m3 = P4(M, J, p, a, b)
-    m4 = P5(M, J, p, a, b, c)
+    m4 = P5(M, J, p, a, c)
 
     opti = [0]*4
     time = [0]*4
